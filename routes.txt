@@ -1,0 +1,3 @@
+signals/signal1.txt
+signals/signal2.txt
+signals/signal3.txt

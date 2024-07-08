@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Signal Measurement</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body>
+    <h1>Signal Measurement Interface</h1>
+    <div id="graph"></div>
+    <div id="cursor-info">
+        <div class="row">
+            <div class="col">
+                <p>Time 1: <span id="time1"></span></p>
+                <p>Paw 1: <span id="paw1"></span></p>
+                <p>Pes 1: <span id="pes1"></span></p>
+            </div>
+            <div class="col">
+                <p>Time 2: <span id="time2"></span></p>
+                <p>Paw 2: <span id="paw2"></span></p>
+                <p>Pes 2: <span id="pes2"></span></p>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <p>ΔPaw: <span id="deltaPaw"></span></p>
+            </div>
+            <div class="col">
+                <p>ΔPes: <span id="deltaPes"></span></p>
+            </div>
+        </div>
+        <button id="sendData">Send Data</button> <!-- Button to send data -->
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPlot();
+
+            document.getElementById('sendData').addEventListener('click', function() {
+                sendDataToServer();
+            });
+        });
+
+        function loadPlot() {
+            fetch('/get_plot')
+                .then(response => response.json())
+                .then(data => {
+                    const graphDiv = document.getElementById('graph');
+                    Plotly.newPlot(graphDiv, data.data, data.layout);
+                    initializeCursors(graphDiv, data.data);
+                });
+        }
+
+        function initializeCursors(graphDiv, plotData) {
+            const time1 = document.getElementById('time1');
+            const time2 = document.getElementById('time2');
+            const paw1 = document.getElementById('paw1');
+            const paw2 = document.getElementById('paw2');
+            const pes1 = document.getElementById('pes1');
+            const pes2 = document.getElementById('pes2');
+            const deltaPaw = document.getElementById('deltaPaw');
+            const deltaPes = document.getElementById('deltaPes');
+
+            graphDiv.on('plotly_click', function(eventData) {
+                const point = eventData.points[0];
+                const time = point.x;
+                let paw, pes;
+
+                plotData.forEach(trace => {
+                    if (trace.name === 'Paw[cmH2O]') {
+                        paw = trace.y[point.pointIndex];
+                    }
+                    if (trace.name === 'Pes[cmH2O]') {
+                        pes = trace.y[point.pointIndex];
+                    }
+                });
+
+                if (!time1.textContent) {
+                    time1.textContent = time.toFixed(2);
+                    paw1.textContent = paw ? paw.toFixed(2) : '';
+                    pes1.textContent = pes ? pes.toFixed(2) : '';
+                } else if (!time2.textContent) {
+                    time2.textContent = time.toFixed(2);
+                    paw2.textContent = paw ? paw.toFixed(2) : '';
+                    pes2.textContent = pes ? pes.toFixed(2) : '';
+
+                    deltaPaw.textContent = (parseFloat(paw2.textContent) - parseFloat(paw1.textContent)).toFixed(2);
+                    deltaPes.textContent = (parseFloat(pes2.textContent) - parseFloat(pes1.textContent)).toFixed(2);
+                } else {
+                    time1.textContent = time.toFixed(2);
+                    paw1.textContent = paw ? paw.toFixed(2) : '';
+                    pes1.textContent = pes ? pes.toFixed(2) : '';
+                    time2.textContent = '';
+                    paw2.textContent = '';
+                    pes2.textContent = '';
+                    deltaPaw.textContent = '';
+                    deltaPes.textContent = '';
+                }
+            });
+        }
+
+        function sendDataToServer() {
+            const time1 = document.getElementById('time1').textContent;
+            const time2 = document.getElementById('time2').textContent;
+            const paw1 = document.getElementById('paw1').textContent;
+            const paw2 = document.getElementById('paw2').textContent;
+            const pes1 = document.getElementById('pes1').textContent;
+            const pes2 = document.getElementById('pes2').textContent;
+
+            const data = {
+                time1: time1,
+                time2: time2,
+                paw1: paw1,
+                paw2: paw2,
+                pes1: pes1,
+                pes2: pes2
+            };
+
+            fetch('/receive_data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
+                loadPlot(); // Load the next plot after sending data
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
+</body>
+</html>
