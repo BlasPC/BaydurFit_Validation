@@ -6,12 +6,34 @@
 </head>
 <body>
     <h1>Register</h1>
-    <form method="POST">
-        <label for="email">Email:</label>
-        <input type="email" name="email" required>
-        <label for="name">Full Name:</label>
-        <input type="text" name="name" required>
-        <button type="submit">Register</button>
+    <form action="{{ url_for('register') }}" method="post">
+        {{ form.hidden_tag() }}
+        
+        <p>
+            {{ form.email.label }}<br>
+            {{ form.email(size=32) }}
+        </p>
+        <p>
+            {{ form.name.label }}<br>
+            {{ form.name(size=32) }}
+        </p>
+
+        <p>
+            {{ form.country.label }}<br>
+            {{ form.country() }}
+        </p>
+        
+        <p>
+            {{ form.question_a.label }}<br>
+            {{ form.question_a() }}
+        </p>
+        
+        <p>
+            {{ form.question_b.label }}<br>
+            {{ form.question_b() }}
+        </p>
+
+        <p>{{ form.submit() }}</p>
     </form>
 </body>
 </html>

@@ -1,20 +1,26 @@
-import os
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from flask_migrate import Migrate
+from forms import RegistrationForm
 import plotly.graph_objs as go
 import pandas as pd
 import json
 import plotly
+from datetime import datetime
+import os
+
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
 
 db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-from models import User, Result
+from models import User, Result, AccessTime
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -25,6 +31,10 @@ def load_user(user_id):
 def index():
     if 'file_index' not in session:
         session['file_index'] = 0
+    # Log access time
+    access_time = AccessTime(user_id=current_user.id, access_time=datetime.utcnow())
+    db.session.add(access_time)
+    db.session.commit()
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -48,15 +58,27 @@ def logout():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        email = request.form['email']
-        name = request.form['name']
-        new_user = User(email=email, name=name)
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        name = form.name.data
+        country = form.country.data
+        question_a = form.question_a.data
+        question_b = form.question_b.data
+
+        new_user = User(
+            email=email,
+            name=name,
+            country_of_origin=country,
+            question_a=question_a,
+            question_b=question_b
+        )
+
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
         return redirect(url_for('index'))
-    return render_template('register.html')
+    return render_template('register.html', form=form)
 
 def get_file_paths():
     with open('routes.txt') as f:
@@ -114,7 +136,8 @@ def receive_data():
         paw1=data['paw1'],
         paw2=data['paw2'],
         pes1=data['pes1'],
-        pes2=data['pes2']
+        pes2=data['pes2'],
+        register_time=datetime.utcnow()
     )
     db.session.add(new_result)
     db.session.commit()
