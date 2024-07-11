@@ -3,42 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <title>Register</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h1>Register</h1>
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <ul class="flashes">
-                {% for category, message in messages %}
-                    <li class="{{ category }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
-    {% endwith %}
     <form action="{{ url_for('register') }}" method="post">
         {{ form.hidden_tag() }}
+        
+        <p>
+            {{ form.email.label }}<br>
+            {{ form.email(size=32) }}
+        </p>
+        <p>
+            {{ form.name.label }}<br>
+            {{ form.name(size=32) }}
+        </p>
 
-        <label for="email">{{ form.email.label }}</label>
-        {{ form.email(size=32) }}<br>
+        <p>
+            {{ form.country.label }}<br>
+            {{ form.country() }}
+        </p>
+        
+        <p>
+            {{ form.question_a.label }}<br>
+            {{ form.question_a() }}
+        </p>
 
-        <label for="name">{{ form.name.label }}</label>
-        {{ form.name(size=32) }}<br>
-
-        <label for="country">{{ form.country.label }}</label>
-        {{ form.country() }}<br>
-
-        <label for="question_a">{{ form.question_a.label }}</label>
-        {{ form.question_a() }}<br>
-
-        <label for="question_b">{{ form.question_b.label }}</label>
-        {{ form.question_b() }}<br>
-
-        <button type="submit">Register</button>
-    </form>
-    <br>
-    <form action="{{ url_for('login') }}" method="get">
-        <button type="submit">Back to Login</button>
+        <p>{{ form.submit() }}</p>
     </form>
 </body>
 </html>

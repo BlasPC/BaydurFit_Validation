@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session,jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
@@ -10,7 +10,6 @@ import plotly
 from datetime import datetime
 import os
 
-
 app = Flask(__name__)
 app.config.from_object('config.Config')
 
@@ -20,7 +19,7 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-from models import User, Result, AccessTime
+from models import User, Result
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -31,17 +30,11 @@ def load_user(user_id):
 def index():
     if 'file_index' not in session:
         session['file_index'] = 0
-    # Log access time
-    access_time = AccessTime(user_id=current_user.id, access_time=datetime.utcnow())
-    db.session.add(access_time)
-    db.session.commit()
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'GET':
-        flash('As part of the Ventilation course at ITBA, we are conducting an analysis of the occlusion test (or Baydur test) used to validate the placement of an esophageal balloon. This is an unpaid academic work.\n\nWe ask for your help by marking the points where you would take measurements to perform the occlusion test.', 'info')  # Flash the message only when accessing the login page directly
-
+    welcome_message = "In the context of the Ventilation course at ITBA, we are conducting an analysis of the occlusion test evaluation (or Baydur test) used to validate the placement of an esophageal balloon. This is an unpaid academic work. \nWe ask for your help by marking the points where you would take measurements for the occlusion test."
     if request.method == 'POST':
         email = request.form['email']
         user = User.query.filter_by(email=email).first()
@@ -50,9 +43,7 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Login Unsuccessful. Please check email.', 'danger')
-    return render_template('login.html')
-
-
+    return render_template('login.html', welcome_message=welcome_message)
 
 @app.route('/logout')
 @login_required
@@ -69,14 +60,12 @@ def register():
         name = form.name.data
         country = form.country.data
         question_a = form.question_a.data
-        question_b = form.question_b.data
 
         new_user = User(
             email=email,
             name=name,
             country_of_origin=country,
-            question_a=question_a,
-            question_b=question_b
+            question_a=question_a
         )
 
         db.session.add(new_user)
@@ -93,12 +82,12 @@ def get_file_paths():
 @login_required
 def get_plot():
     file_paths = get_file_paths()
-    file_index = session.get('file_index', 0)
-    
-    if file_index >= len(file_paths):
-        file_index = 0
+    signal_line = current_user.signal_line  # Use signal_line from user model
 
-    filename = file_paths[file_index]
+    if signal_line >= len(file_paths):
+        signal_line = 0
+
+    filename = file_paths[signal_line]
     df = pd.read_csv(filename, sep='\t', skiprows=5)
 
     time = df['Time']
@@ -118,7 +107,7 @@ def get_plot():
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time, y=signal1, mode='lines', name='Paw[cmH2O]'))
     fig.add_trace(go.Scatter(x=time, y=signal2, mode='lines', name='Pes[cmH2O]'))
-    #fig.add_trace(go.Scatter(x=time, y=signal3, mode='lines', name='Ptpulm[cmH2O]'))
+    fig.add_trace(go.Scatter(x=time, y=signal3, mode='lines', name='Ptpulm[cmH2O]'))
 
     fig.update_layout(
         title='Respiratory Signals',
@@ -134,6 +123,17 @@ def get_plot():
 @login_required
 def receive_data():
     data = request.get_json()
+    file_paths = get_file_paths()
+    
+    if current_user.signal_line >= len(file_paths):
+        current_user.signal_line = 0
+        db.session.commit()
+    
+    try:
+        file_name = file_paths[current_user.signal_line]
+    except IndexError:
+        return jsonify(success=False, message="Invalid signal line index"), 500
+
     new_result = Result(
         user_id=current_user.id,
         time1=data['time1'],
@@ -142,15 +142,16 @@ def receive_data():
         paw2=data['paw2'],
         pes1=data['pes1'],
         pes2=data['pes2'],
-        register_time=datetime.utcnow()
+        register_time=datetime.utcnow(),
+        signal_line=current_user.signal_line,  # Save the current signal line
+        file_name=file_name  # Save the file name (or index)
     )
     db.session.add(new_result)
+    
+    # Update the user's signal line
+    current_user.signal_line = (current_user.signal_line + 1) % len(file_paths)  # Move to the next file in routes.txt
     db.session.commit()
     print(f"Received data: {data}")
-
-    file_index = session.get('file_index', 0)
-    file_index = (file_index + 1) % len(get_file_paths())
-    session['file_index'] = file_index
 
     return jsonify(success=True)
 
