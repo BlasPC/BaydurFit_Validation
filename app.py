@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template, request, redirect, url_for, flash, session,jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_migrate import Migrate
@@ -39,6 +39,9 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    if request.method == 'GET':
+        flash('As part of the Ventilation course at ITBA, we are conducting an analysis of the occlusion test (or Baydur test) used to validate the placement of an esophageal balloon. This is an unpaid academic work.\n\nWe ask for your help by marking the points where you would take measurements to perform the occlusion test.', 'info')  # Flash the message only when accessing the login page directly
+
     if request.method == 'POST':
         email = request.form['email']
         user = User.query.filter_by(email=email).first()
@@ -48,6 +51,8 @@ def login():
         else:
             flash('Login Unsuccessful. Please check email.', 'danger')
     return render_template('login.html')
+
+
 
 @app.route('/logout')
 @login_required
@@ -113,7 +118,7 @@ def get_plot():
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time, y=signal1, mode='lines', name='Paw[cmH2O]'))
     fig.add_trace(go.Scatter(x=time, y=signal2, mode='lines', name='Pes[cmH2O]'))
-    fig.add_trace(go.Scatter(x=time, y=signal3, mode='lines', name='Ptpulm[cmH2O]'))
+    #fig.add_trace(go.Scatter(x=time, y=signal3, mode='lines', name='Ptpulm[cmH2O]'))
 
     fig.update_layout(
         title='Respiratory Signals',

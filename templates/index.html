@@ -126,11 +126,23 @@
             .then(response => response.json())
             .then(data => {
                 console.log('Success:', data);
+                clearFields();  // Clear the fields after sending data
                 loadPlot(); // Load the next plot after sending data
             })
             .catch((error) => {
                 console.error('Error:', error);
             });
+        }
+
+        function clearFields() {
+            document.getElementById('time1').textContent = '';
+            document.getElementById('time2').textContent = '';
+            document.getElementById('paw1').textContent = '';
+            document.getElementById('paw2').textContent = '';
+            document.getElementById('pes1').textContent = '';
+            document.getElementById('pes2').textContent = '';
+            document.getElementById('deltaPaw').textContent = '';
+            document.getElementById('deltaPes').textContent = '';
         }
     </script>
 </body>

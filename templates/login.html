@@ -3,14 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <title>Login</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <h1>Login</h1>
-    <form method="POST">
-        <label for="email">Email:</label>
-        <input type="email" name="email" required>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <ul class="flashes">
+                {% for category, message in messages %}
+                    <li class="{{ category }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    <form action="{{ url_for('login') }}" method="post">
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" required>
         <button type="submit">Login</button>
     </form>
-    <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+    <br>
+    <form action="{{ url_for('register') }}" method="get">
+        <button type="submit">Register</button>
+    </form>
 </body>
 </html>
