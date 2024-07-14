@@ -36,6 +36,8 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    session['t1'] = -1
+    session['t2'] = -1
     welcome_message = "In the context of the Ventilation course at ITBA, we are conducting an analysis of the occlusion test evaluation (or Baydur test) used to validate the placement of an esophageal balloon. This is an unpaid academic work. \nWe ask for your help by marking the points where you would take measurements for the occlusion test."
     if request.method == 'POST':
         email = request.form['email']
@@ -45,6 +47,7 @@ def login():
             return redirect(url_for('index'))
         else:
             flash('Login Unsuccessful. Please check email.', 'danger')
+
     return render_template('login.html', welcome_message=welcome_message)
 
 @app.route('/logout')
@@ -100,7 +103,7 @@ def get_plot():
     signal1 = df['Paw']
     signal2 = df['Pes']
     signal3 = df['Ptpulm']
-    cut = True
+    cut = False
     if cut:
         ti = 400
         tf = 460
