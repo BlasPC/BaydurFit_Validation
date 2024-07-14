@@ -96,6 +96,7 @@
                     deltaPaw.textContent = '';
                     deltaPes.textContent = '';
                 }
+                sendtimes()
             });
         }
 
@@ -127,6 +128,32 @@
             .then(data => {
                 console.log('Success:', data);
                 clearFields();  // Clear the fields after sending data
+                loadPlot(); // Load the next plot after sending data
+            })
+            .catch((error) => {
+                console.error('Error:', error);
+            });
+        }
+
+        function sendtimes() {
+            const time1 = document.getElementById('time1').textContent;
+            const time2 = document.getElementById('time2').textContent;
+            
+            const data = {
+                time1: time1,
+                time2: time2,
+            };
+
+            fetch('/receive_cursor_position', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Success:', data);
                 loadPlot(); // Load the next plot after sending data
             })
             .catch((error) => {

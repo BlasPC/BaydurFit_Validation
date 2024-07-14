@@ -71,6 +71,8 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
+        session['t1'] = -1
+        session['t2'] = -1
         return redirect(url_for('index'))
     return render_template('register.html', form=form)
 
@@ -107,8 +109,25 @@ def get_plot():
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time, y=signal1, mode='lines', name='Paw[cmH2O]'))
     fig.add_trace(go.Scatter(x=time, y=signal2, mode='lines', name='Pes[cmH2O]'))
-    fig.add_trace(go.Scatter(x=time, y=signal3, mode='lines', name='Ptpulm[cmH2O]'))
-
+    #fig.add_trace(go.Scatter(x=time, y=signal3, mode='lines', name='Ptpulm[cmH2O]'))
+    # Retrieve t1 and t2 from the session
+    t1 = session.get('t1', time.iloc[0])  # Default to the first time value if not set
+    t2 = session.get('t2', time.iloc[0])  # Default to the last time value if not set
+    if t1==-1:
+        t1=time.iloc[0]
+    if t2==-1:
+        t2=time.iloc[0]
+    vertical_lines_x = [t1, t2]  # Use t1 and t2 for vertical lines
+    for x in vertical_lines_x:
+        fig.add_shape(
+            type='line',
+            x0=x,
+            y0=min(min(signal1), min(signal2)),
+            x1=x,
+            y1=max(max(signal1), max(signal2)),
+            line=dict(color='Green',),
+        )
+        
     fig.update_layout(
         title='Respiratory Signals',
         xaxis_title='Time',
@@ -152,7 +171,25 @@ def receive_data():
     current_user.signal_line = (current_user.signal_line + 1) % len(file_paths)  # Move to the next file in routes.txt
     db.session.commit()
     print(f"Received data: {data}")
+    session['t1'] = -1
+    session['t2'] = -1
 
+    return jsonify(success=True)
+
+@app.route('/receive_cursor_position', methods=['POST'])
+def receive_cursor_position():
+    data = request.get_json()
+    time1=data['time1']
+    time2=data['time2']   
+    t1=float(time1)
+    if time1=='':
+        t1=-1
+    if time2=='':
+        t2=-1
+    else: t2=float(time2)
+    print('t1:',t1,'t2:',t2)
+    session['t1'] = t1
+    session['t2'] = t2
     return jsonify(success=True)
 
 if __name__ == '__main__':
