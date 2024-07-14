@@ -9,6 +9,8 @@ import json
 import plotly
 from datetime import datetime
 import os
+import random
+
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -60,12 +62,14 @@ def register():
         name = form.name.data
         country = form.country.data
         question_a = form.question_a.data
-
+        random_signal_line = random.randint(0, len(get_file_paths()) - 1)
+        print('signal_line',random_signal_line)
         new_user = User(
             email=email,
             name=name,
             country_of_origin=country,
-            question_a=question_a
+            question_a=question_a,
+            signal_line=random_signal_line
         )
 
         db.session.add(new_user)
