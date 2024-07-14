@@ -102,7 +102,7 @@ def get_plot():
         time = df['Time'][ti*fs:tf*fs]
         signal1 = df['Paw'][ti*fs:tf*fs]
         signal2 = df['Pes'][ti*fs:tf*fs]
-        signal3 = df['Ptpulm'][ti*fs:tf*fs]
+        #signal3 = df['Ptpulm'][ti*fs:tf*fs]
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=time, y=signal1, mode='lines', name='Paw[cmH2O]'))
