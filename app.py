@@ -21,7 +21,7 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-from models import User, Result
+from models import User, Result,AccessTime
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -32,6 +32,10 @@ def load_user(user_id):
 def index():
     if 'file_index' not in session:
         session['file_index'] = 0
+    # Registrar el tiempo de acceso
+    access_time = AccessTime(user_id=current_user.id, access_time=datetime.utcnow())
+    db.session.add(access_time)
+    db.session.commit()
     return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
